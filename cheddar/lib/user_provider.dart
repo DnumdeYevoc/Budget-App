@@ -10,6 +10,10 @@ class UserProvider extends ChangeNotifier {
   CollectionReference<Map<String, dynamic>>? budgetsRef;
 
   Budget curBudget = Budget.blank();
+
+  List<Transaction> curTransactions = [];
+  String curTransactionsCategory = '#inbox';
+
   List<String> budgetNames = [];
   int budgetIndex = -1;
 
@@ -48,7 +52,7 @@ class UserProvider extends ChangeNotifier {
     budgetsRef?.doc(date).set({varName: newValue}, SetOptions(merge: mergeOpt));
     notifyListeners();
     // Call the callback to update the actual class variable
-    setter(newValue); //TODO change to work with the arrays
+    setter(newValue);
   }
 
   Future<void> changeBudgetArrayVar<T>(
@@ -339,6 +343,22 @@ class UserProvider extends ChangeNotifier {
     //   expIcons.add(Icon(IconMapper.getIconData(expIconNames[i])));
     // }
 
+    //load curvalues
+    for (final cat in expNames) {
+      print('setting curvalue for $cat');
+      setCategoryCurValue(
+        budget: date,
+        category: cat,
+      ); 
+    }
+    for (final cat in incNames) {
+      print('setting curvalue for $cat');
+      setCategoryCurValue(
+        budget: date,
+        category: cat,
+      ); 
+    }
+
     return Budget(
       budgetDate: date,
       exp: Expenses(
@@ -385,34 +405,37 @@ class UserProvider extends ChangeNotifier {
   }
 
   //transactions
-  Future<List<Transaction>> loadTransactions({
+  Future<void> loadTransactions({
     required String budget,
     required String cat,
   }) async {
+    curTransactionsCategory = (budget == '' || cat == '') ? '#inbox' : cat;
+    List<Transaction> categoryTransactions = [];
     final ref = FirebaseFirestore.instance
         .collection('users')
         .doc(email)
         .collection('Transactions')
-        .doc(budget);
-
-    List<Transaction> categoryTransactions = [];
+        .doc(budget == '' || cat == '' ? '#inbox' : budget);
 
     final snap = await ref.get();
     if (snap.exists) {
       Map<String, dynamic> transactionData =
           snap.data() as Map<String, dynamic>;
-      List categoryData = transactionData[cat];
+      List categoryData =
+          transactionData[(budget == '' || cat == '') ? 'transactions' : cat];
       for (int i = 0; i < categoryData.length; i++) {
         categoryTransactions.add(Transaction(data: categoryData[i]));
       }
     }
-    return categoryTransactions;
+    curTransactions = categoryTransactions;
+
+    notifyListeners();
   }
 
   Future<void> addTransaction({
     required String name,
     required double value,
-    
+
     String category = '',
   }) async {
     int id = -1;
@@ -437,31 +460,36 @@ class UserProvider extends ChangeNotifier {
       //convert to data (__::__::___)
       String data = encodeTransaction(name: name, value: value, id: id);
 
-      if (category != '' ) {
+      if (category != '') {
         //if there is a budget and category
-
         //combine our new data with the existing array in the category
-        await transactionRef
-            .doc(budgetDate)
-            .set({
-              category: FieldValue.arrayUnion([data]),
-            }, SetOptions(merge: true));
+        await transactionRef.doc(budgetDate).set({
+          category: FieldValue.arrayUnion([data]),
+        }, SetOptions(merge: true));
         //log it also in mass saved transactions
         //TODO add to data to show category and bugdet in saved array
         await transactionRef.doc('#saved').set({
           'transactions': FieldValue.arrayUnion([data]),
         }, SetOptions(merge: true));
-        
+        //updates curvalues
+        await setCategoryCurValue(budget: budgetDate, category: category);
+
       } else {
         //if there is no budget and category
         //move to inbox ( unsorted )
         await transactionRef.doc('#inbox').set({
           'transactions': FieldValue.arrayUnion([data]),
         }, SetOptions(merge: true));
+        
       }
+      //loads inbox as curtransactioncateogry bc additng transactions will always be in transaction page
+      await loadTransactions(budget: '', cat: '');
+      
+        
     } else {
       return;
     }
+    notifyListeners();
   }
 
   String encodeTransaction({
@@ -470,8 +498,124 @@ class UserProvider extends ChangeNotifier {
     required int id,
   }) {
     String data = '$name::$value::$id';
-    print(data);
+
     return data;
+  }
+
+  //function to set curvalues from transaction data
+  Future<void> setCategoryCurValue({
+    required String budget,
+    required String category,
+  }) async {
+    double sum = -1;
+    List<Transaction> transactions = [];
+    //grab list of transactions in category
+    final transactionRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(email)
+        .collection('Transactions')
+        .doc(budget);
+
+    final snap = await transactionRef.get();
+    if (snap.exists) {
+      sum = 0;
+      Map<String, dynamic> data = snap.data() as Map<String, dynamic>;
+      List categoryData = data[category] ?? [];
+      for (int i = 0; i < categoryData.length; i++) {
+        //decode them
+        transactions.add(Transaction(data: categoryData[i]));
+      }
+      //sum their values
+      for (int i = 0; i < transactions.length; i++) {
+        sum += transactions[i].value;
+      }
+    } else {
+      sum = 0;
+    }
+
+    //set curvalue in budget
+    //if exp or inc
+    if (curBudget.inc.names.contains(category)) {
+      //inc
+      int index = curBudget.inc.names.indexOf(category);
+      await changeBudgetArrayVar<double>(
+        (list) async {
+          final next = List<double>.from(list);
+          next[index] = sum.abs();
+          return next;
+        },
+        curBudget.inc.curValues,
+        (list) async {
+          curBudget.inc.curValues = list;
+        },
+        index: index,
+        newVar: sum.abs(),
+        date: curBudget.budgetDate,
+        varName: 'incCurValues',
+        firebaseSave: true, //makes it save to local, and firebase
+      );
+    } else if (curBudget.exp.names.contains(category)) {
+      //exp
+      int index = curBudget.exp.names.indexOf(category);
+      await changeBudgetArrayVar<double>(
+        (list) async {
+          final next = List<double>.from(list);
+          next[index] = sum.abs();
+          return next;
+        },
+        curBudget.exp.curValues,
+        (list) async {
+          curBudget.exp.curValues = list;
+        },
+        index: index,
+        newVar: sum.abs(),
+        date: curBudget.budgetDate,
+        varName: 'expCurValues', 
+        firebaseSave: true, //makes it save to local, and firebase
+      );
+    } else {
+      print("category not found");
+    }
+    //TODO add popup functionality to see every transaction in a category on homepage
+    
+    //TODO change center header title based on if it is homepage or budget page
+  }
+
+  //need function to categorize transactions, which calls a function that upadtes the curvalues
+  Future<void> categorizeTransaction({
+    required String budget,
+    required String category,
+    required Transaction transaction,
+  }) async {
+    final transactionRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(email)
+        .collection('Transactions');
+    //check for null values
+    if (budget == '' || category == '') {
+      return;
+    }
+    //remove from inbox
+    await transactionRef.doc('#inbox').set({
+      'transactions': FieldValue.arrayRemove([transaction.data]),
+    }, SetOptions(merge: true));
+    //remove from curTransactions
+    curTransactions.removeWhere((t) => t.data == transaction.data);
+
+    //add to category
+    await transactionRef.doc(budget).set({
+      category: FieldValue.arrayUnion([transaction.data]),
+    }, SetOptions(merge: true));
+
+    //add to #saved
+    await transactionRef.doc('#saved').set({
+      'transactions': FieldValue.arrayUnion([transaction.data]),
+    }, SetOptions(merge: true));
+
+    //update curvalue for the category
+    await setCategoryCurValue(budget: budget, category: category);
+
+    notifyListeners();
   }
 }
 

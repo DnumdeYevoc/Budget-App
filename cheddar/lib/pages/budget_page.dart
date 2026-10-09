@@ -43,8 +43,8 @@ class _BudgetPageState extends State<BudgetPage> {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
-            
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(height: 30,),

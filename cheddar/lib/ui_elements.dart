@@ -555,7 +555,7 @@ class _MyCategoryListState extends State<MyCategoryList> {
   List<double> values = [];
 
   List<double> curValues = [];
-  bool showCurrentValues = true;
+  bool showCurrentValues = true; //also effects the popup
   bool isInc = true;
   @override
   void initState() {
@@ -596,42 +596,76 @@ class _MyCategoryListState extends State<MyCategoryList> {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: values.length,
-        padding: const EdgeInsets.all(8.0),
+        padding: EdgeInsets.zero,
         itemBuilder: (BuildContext context, int index) {
-          return SizedBox(
-            width: 200,
-            child: Card(
-              clipBehavior: Clip.antiAlias,
+          return Padding(
+            padding: const EdgeInsets.all(1.0),
+            child: SizedBox(
+              width: 140,
 
-              elevation: 5,
-              margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withAlpha(20),
-                    width: 4.0,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    minTileHeight: 58,
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    minVerticalPadding: 0,
+                    visualDensity: VisualDensity.compact,
+
+                    tileColor: Theme.of(context).colorScheme.surfaceContainer,
+                    title: Row(
+                      spacing: 10,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [icons[index], Text(names[index])],
+                    ),
+
+                    onTap: () {
+                      showCurrentValues
+                          //show transactions in this category
+                          ? showModalBottomSheet(
+                              isScrollControlled: true,
+                              context: context,
+                              builder: (context) {
+                                return MyTransactionList(
+                                  categoryName: names[index],
+
+                                  oneCategory: true,
+                                );
+                              },
+                            )
+                          //show edit screen
+                          : showModalBottomSheet(
+                              isScrollControlled: true,
+                              context: context,
+                              builder: (context) {
+                                return MyBottomSheetBuilder(
+                                  title: 'Edit Category',
+                                  edit: true,
+                                  catIndex: index,
+                                  catType: isInc,
+                                );
+                              },
+                            );
+                    },
                   ),
-                ),
-                child: ListTile(
-                  leading: icons[index],
-                  title: Text(names[index]),
-                  subtitle: Stack(
+                  Stack(
                     alignment: Alignment.center,
                     children: [
                       SizedBox(
-                        height: 25,
+                        height: 40,
                         child: RotatedBox(
                           quarterTurns: isInc ? 0 : 2,
                           child: LinearProgressIndicator(
                             value: showCurrentValues
                                 ? curValues[index] / values[index]
                                 : values[index] / valueSum,
-                            backgroundColor: const Color.fromARGB(37, 0, 0, 0),
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.surface,
+
                             color: catColor,
-                            borderRadius: BorderRadius.circular(30),
                           ),
                         ),
                       ),
@@ -643,22 +677,7 @@ class _MyCategoryListState extends State<MyCategoryList> {
                       ),
                     ],
                   ),
-                  onTap: () {
-                    //show edit screen
-                    showModalBottomSheet(
-                      isScrollControlled: true,
-                      context: context,
-                      builder: (context) {
-                        return MyBottomSheetBuilder(
-                          title: 'Edit Category',
-                          edit: true,
-                          catIndex: index,
-                          catType: isInc,
-                        );
-                      },
-                    );
-                  },
-                ),
+                ],
               ),
             ),
           );
@@ -965,7 +984,7 @@ class _MyPieChartState extends State<MyPieChart> {
     return IgnorePointer(
       ignoring: !inRadius,
       child: PieChart(
-        swapAnimationDuration: const Duration(milliseconds: 200),
+        swapAnimationDuration: const Duration(milliseconds: 500),
         swapAnimationCurve: Curves.easeInOut,
 
         PieChartData(
@@ -1013,7 +1032,7 @@ class _MyPieChartState extends State<MyPieChart> {
     }
 
     return PieChart(
-      swapAnimationDuration: const Duration(milliseconds: 200),
+      swapAnimationDuration: const Duration(milliseconds: 500),
       swapAnimationCurve: Curves.easeInOut,
       PieChartData(
         pieTouchData: PieTouchData(
@@ -1134,132 +1153,215 @@ class _MyPieChartState extends State<MyPieChart> {
   }
 }
 
-
 //need to be usable for clicking on catgories in homepage and listing unfiltered ones in transaction page
 class MyTransactionList extends StatefulWidget {
   const MyTransactionList({
     super.key,
 
     //reuquired
-    required this.names,
-    required this.values,
-    
-    required this.categories,
+    // required this.names,
+    // required this.values,
 
-
+    // required this.categories,
     required this.oneCategory,
-    this.categoryName ='',
+    this.categoryName = '',
+    this.transactions = const [],
   });
-  final List<String> names;
-  
-  final List<String> categories;
-
-  final List<double> values;
+  final List<Transaction> transactions;
 
   final bool oneCategory;
   final String categoryName;
-
-
 
   @override
   State<MyTransactionList> createState() => _MyTransactionListState();
 }
 
 class _MyTransactionListState extends State<MyTransactionList> {
-  List<String> names = [];
-  
-  List<String> categories = [];
+  List<Transaction> transactions = [];
 
+  List<String> names = [];
   List<double> values = [];
 
   bool oneCategory = false;
-
-
   String categoryName = '';
+  String? selectedCategory;
 
   @override
   void initState() {
     super.initState();
-    // Initialize it once from the widget
-    names = widget.names;
-    
-    values = widget.values;
-    categories = widget.categories;
-    oneCategory = widget.oneCategory;
+    _initializeTransactions();
+  }
 
+  Future<void> _initializeTransactions() async {
+    oneCategory = widget.oneCategory;
     categoryName = widget.categoryName;
+
+    if (oneCategory) {
+      await context.read<UserProvider>().loadTransactions(
+        budget: context.read<UserProvider>().curBudget.budgetDate,
+        cat: categoryName,
+      );
+      if (!mounted) return;
+      transactions = context.read<UserProvider>().curTransactions;
+    } else {
+      transactions = widget.transactions;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _syncTransactionLists();
+    });
+  }
+
+  void _syncTransactionLists() {
+    names.clear();
+    values.clear();
+    for (int i = 0; i < transactions.length; i++) {
+      names.add(transactions[i].name);
+      values.add(transactions[i].value);
+    }
   }
 
   @override
   void didUpdateWidget(covariant MyTransactionList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    names = widget.names;
-    
-    values = widget.values;
-    categories = widget.categories;
     oneCategory = widget.oneCategory;
-
     categoryName = widget.categoryName;
+
+    if (oneCategory) {
+      transactions = context.read<UserProvider>().curTransactions;
+    } else {
+      transactions = widget.transactions;
+    }
+
+    _syncTransactionLists();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (oneCategory){
-      for(int i = 0; i < categories.length; i++){
-        if (categories[i]!= categoryName){
-          names.removeAt(i);
+    //isn't needed anymore since transactions are already filtered in the provider
+
+    // if (oneCategory){
+    //   for(int i = 0; i < categories.length; i++){
+    //     if (categories[i]!= categoryName){
+    //       names.removeAt(i);
+    //       values.removeAt(i);
+    //       categories.removeAt(i);
+    //     }
+    //   }
+    // }
+    return GestureDetector(
+      onTap: () {
+              Navigator.pop(context);
+            },
+      child: Padding(
+        //TODO add more category specific info here if wanted (ie totals, percenatges, sumaries etc)
+        padding: EdgeInsets.only(top: oneCategory ? 20.0 : 0.0),
+        child: ListView.builder(
+          scrollDirection: Axis.vertical,
+          itemCount: values.length,
           
-          values.removeAt(i);
-          categories.removeAt(i);
-      
-          
-        }
-      }
-    }
-    return ListView.builder(
-      scrollDirection: Axis.vertical,
-      itemCount: values.length,
-      padding: const EdgeInsets.only(top: 30, left: 6, right: 6, bottom: 6),
-      itemBuilder: (BuildContext context, int index) {
-        return SizedBox(
-          height: 80,
-          
-          child: Card(
-            clipBehavior: Clip.antiAlias,
-            elevation: 5,
+          itemBuilder: (BuildContext context, int index) {
             
-            child: Container(
-              decoration: BoxDecoration(border: Border(left: BorderSide(width: 10, color: (values[index]>0)?Colors.green:Colors.red))),
-              child: ListTile(
+            return Padding(
+              padding: const EdgeInsets.all(1),
+              child: Container(
                 
-                leading: (oneCategory)
-                ? SizedBox(width: 0)//if just showing values from one category no need for labels
-                :SizedBox(
-                  width: 100,
-                  
-                  child: (categories[index] == '')
-                      ? IconButton(
-                          onPressed: () {
-                            print('pressed');
-                          },
-                          icon: Icon(Icons.question_mark),
-                        )
-                      : Column(
-                        mainAxisAlignment: MainAxisAlignment.center, 
-                        children: [
-                          AutoSizeText('Category: ${categories[index]}', maxLines: 1,minFontSize: 5, maxFontSize: 20,),
-                        ]),
+                decoration: BoxDecoration(
+                  border: Border(
+                    left: BorderSide(
+                      width: 10,
+                      color: (values[index] > 0) ? Colors.green : Colors.red,
+                    ),
+                  ),
                 ),
-                title: AutoSizeText(names[index], maxLines: 1),
-                subtitle: AutoSizeText(
-                  "${(values[index]>0)?'+': '-'}\$${(values[index].abs()).toStringAsFixed(2)}",
-                  maxLines: 1,
+                child: ListTile(
+                  tileColor: Theme.of(context).colorScheme.surfaceContainer,
+                  onTap: () {
+                    oneCategory
+                        ? null//TODO add edit transaction functionality here if wanted
+                        //catgorize transaction
+                        : showModalBottomSheet(
+                            isScrollControlled: true,
+                            context: context,
+                            builder: (context) {
+                              return Container(
+                                alignment: Alignment.center,
+                                padding: EdgeInsets.only(
+                                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                                  top: 20,
+                                  left: 20,
+                                  right: 20,
+                                ),
+                                child: Column(
+                                  children: [
+                                    Text('Categorize Transaction'),
+                                    DropdownButtonFormField(
+                                      items: [
+                                        for (String name
+                                            in (widget.transactions[index].value >
+                                                    0)
+                                                ? context
+                                                      .read<UserProvider>()
+                                                      .curBudget
+                                                      .inc
+                                                      .names
+                                                : context
+                                                      .read<UserProvider>()
+                                                      .curBudget
+                                                      .exp
+                                                      .names)
+                                          DropdownMenuItem(
+                                            value: name,
+                                            child: Text(name),
+                                          ),
+                                      ],
+              
+                                      onChanged: (value) {
+                                        setState(() {
+                                          selectedCategory = value;
+                                        });
+                                      },
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                        if (selectedCategory == null) {
+                                          return;
+                                        }
+              
+                                        context
+                                            .read<UserProvider>()
+                                            .categorizeTransaction(
+                                              transaction:
+                                                  widget.transactions[index],
+                                              budget: context
+                                                  .read<UserProvider>()
+                                                  .curBudget
+                                                  .budgetDate,
+                                              category: selectedCategory ?? '',
+                                            );
+                                      },
+                                      child: Text('Save'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+                    //categorize
+                  },
+                  title: AutoSizeText(names[index], maxLines: 1),
+                  subtitle: AutoSizeText(
+                    "${(values[index] > 0) ? '+' : '-'}\$${(values[index].abs()).toStringAsFixed(2)}",
+                    maxLines: 1,
+                  ),
                 ),
               ),
-            ),
-          ),
-        );
-      },
+            );
+          },
+        ),
+      ),
     );
   }
 }

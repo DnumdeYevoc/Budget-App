@@ -14,6 +14,8 @@ class _TransactionPageState extends State<TransactionPage> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
   String? selectedCategory;
+
+  List<Transaction> transactions = [];
   Widget addTransactionPopup() {
     return StatefulBuilder(
       builder: (context, setModalState) {
@@ -151,9 +153,22 @@ class _TransactionPageState extends State<TransactionPage> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    context.read<UserProvider>().loadTransactions(
+      budget: '',
+      cat:'',
+    );
+  }
+  @override
   Widget build(BuildContext context) {
+    
+    transactions = context.watch<UserProvider>().curTransactions;
+
     return Scaffold(
       floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color.fromARGB(255, 196, 176, 0),
+        child: Icon(Icons.add),
         onPressed: () {
           //add transaction popup
           showModalBottomSheet(
@@ -163,12 +178,10 @@ class _TransactionPageState extends State<TransactionPage> {
           );
         },
       ),
-      body: MyTransactionList(//TODO make way to pull inbox list from firebase or if one category true, make pull from that category
-        categories: ['', 'beer'],//change this stuff to local logic in ui_elements
-        names: ['MCDONALDS#2467', 'BURGERKING#00929838'],
-        oneCategory: false,
-        categoryName: 'beer',
-        values: [100.67, -189302.08],
+      body: MyTransactionList(
+        oneCategory: false,        
+        transactions: transactions,
+
       ),
     );
   }
