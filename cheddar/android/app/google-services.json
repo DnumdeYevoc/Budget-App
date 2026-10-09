@@ -12,7 +12,20 @@
           "package_name": "com.example.cheddar"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "343628565402-5nnasvgib8v8a2g3mf35upprdji7n16u.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.cheddar",
+            "certificate_hash": "51a2cef2029f410703db5637311c462b648e7ffb"
+          }
+        },
+        {
+          "client_id": "343628565402-v7gkc4gmsk2l3igovcpkhna1qbmu08k7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBZGOUiHe00o7_mbB8mnWViHt8uiXc75Og"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "343628565402-v7gkc4gmsk2l3igovcpkhna1qbmu08k7.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "343628565402-to8smdibnob8gms8kfemh7nf8rrn4qc2.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.cheddar"
+              }
+            }
+          ]
         }
       }
     }
