@@ -1256,7 +1256,7 @@ class _MyTransactionListState extends State<MyTransactionList> {
             },
       child: Padding(
         //TODO add more category specific info here if wanted (ie totals, percenatges, sumaries etc)
-        padding: EdgeInsets.only(top: oneCategory ? 20.0 : 0.0),
+        padding: EdgeInsets.only(top: oneCategory ? 30.0 : 10.0),
         child: ListView.builder(
           scrollDirection: Axis.vertical,
           itemCount: values.length,
