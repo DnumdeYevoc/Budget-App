@@ -450,7 +450,10 @@ class _MyBottomSheetBuilderState extends State<MyBottomSheetBuilder> {
                     height: 40,
                     child: TextField(
                       //Category amount
-                      keyboardType: TextInputType.number,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        signed: false,
+                        decimal: true,
+                      ),
                       controller: categoryAmountController,
                       style: TextStyle(fontSize: 12),
                       decoration: const InputDecoration(
@@ -576,7 +579,7 @@ class _MyCategoryListState extends State<MyCategoryList> {
     icons = widget.icons;
     values = widget.values;
     curValues = widget
-        .curValues; //TODO need to change this for adding and deleteing to work properly apparently
+        .curValues; 
     showCurrentValues = widget.showCurrentValues;
     isInc = widget.isInc;
   }
@@ -984,7 +987,7 @@ class _MyPieChartState extends State<MyPieChart> {
     return IgnorePointer(
       ignoring: !inRadius,
       child: PieChart(
-        swapAnimationDuration: const Duration(milliseconds: 500),
+        swapAnimationDuration: const Duration(milliseconds: 300),
         swapAnimationCurve: Curves.easeInOut,
 
         PieChartData(
@@ -1003,7 +1006,6 @@ class _MyPieChartState extends State<MyPieChart> {
 
   Widget _outerPieChart() {
     //premake sections:
-    print(outerIconData);
     outerSections = [
       for (int i = 0; i < outerLength; i++)
         PieChartSectionData(
@@ -1032,7 +1034,7 @@ class _MyPieChartState extends State<MyPieChart> {
     }
 
     return PieChart(
-      swapAnimationDuration: const Duration(milliseconds: 500),
+      swapAnimationDuration: const Duration(milliseconds: 300),
       swapAnimationCurve: Curves.easeInOut,
       PieChartData(
         pieTouchData: PieTouchData(
@@ -1070,7 +1072,6 @@ class _MyPieChartState extends State<MyPieChart> {
         : '\$${outerSum.toStringAsFixed(dec)}';
 
     if (toggleOn == true && prevTouchIndex != -1) {
-      print(outerNameData);
       final String sliceName = inRadius
           ? innerNameData[prevTouchIndex]
           : outerNameData[prevTouchIndex];

@@ -345,14 +345,14 @@ class UserProvider extends ChangeNotifier {
 
     //load curvalues
     for (final cat in expNames) {
-      print('setting curvalue for $cat');
+
       setCategoryCurValue(
         budget: date,
         category: cat,
       ); 
     }
     for (final cat in incNames) {
-      print('setting curvalue for $cat');
+
       setCategoryCurValue(
         budget: date,
         category: cat,
@@ -574,12 +574,9 @@ class UserProvider extends ChangeNotifier {
         firebaseSave: true, //makes it save to local, and firebase
       );
     } else {
-      print("category not found");
+      // print("category not found");
     }
-    //TODO add popup functionality to see every transaction in a category on homepage
-    
-    //TODO change center header title based on if it is homepage or budget page
-  }
+      }
 
   //need function to categorize transactions, which calls a function that upadtes the curvalues
   Future<void> categorizeTransaction({

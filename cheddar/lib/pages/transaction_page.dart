@@ -75,7 +75,10 @@ class _TransactionPageState extends State<TransactionPage> {
                       child: TextField(
                         onChanged: (value) => selectedCategory = null  ,
                         //Category amount
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            signed: true,
+                            decimal: true,
+                          ),
                         controller: amountController,
                         style: TextStyle(fontSize: 12),
                         decoration: const InputDecoration(
