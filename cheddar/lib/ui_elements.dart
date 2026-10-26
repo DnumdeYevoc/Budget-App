@@ -150,6 +150,7 @@ class _MyBottomSheetBuilderState extends State<MyBottomSheetBuilder> {
   }
 
   Future<void> _pickIcon() async {
+    //TODO: make this work on iphone
     IconPickerIcon? result = await showIconPicker(
       context,
 
@@ -424,8 +425,8 @@ class _MyBottomSheetBuilderState extends State<MyBottomSheetBuilder> {
                 children: [
                   Text('Name'),
                   SizedBox(
-                    width: 100,
-                    height: 40,
+                    width: 200,
+                    height: 60,
                     child: TextField(
                       //Category Name
                       style: TextStyle(fontSize: 12),
@@ -446,8 +447,8 @@ class _MyBottomSheetBuilderState extends State<MyBottomSheetBuilder> {
                 children: [
                   Text('Amount'),
                   SizedBox(
-                    width: 100,
-                    height: 40,
+                    width: 200,
+                    height: 60,
                     child: TextField(
                       //Category amount
                       keyboardType: const TextInputType.numberWithOptions(
@@ -578,8 +579,7 @@ class _MyCategoryListState extends State<MyCategoryList> {
     names = widget.names;
     icons = widget.icons;
     values = widget.values;
-    curValues = widget
-        .curValues; 
+    curValues = widget.curValues;
     showCurrentValues = widget.showCurrentValues;
     isInc = widget.isInc;
   }
@@ -594,98 +594,132 @@ class _MyCategoryListState extends State<MyCategoryList> {
       (previousValue, element) => previousValue + element,
     );
 
-    return SizedBox(
-      height: 100,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: values.length,
-        padding: EdgeInsets.zero,
-        itemBuilder: (BuildContext context, int index) {
-          return Padding(
-            padding: const EdgeInsets.all(1.0),
-            child: SizedBox(
-              width: 140,
-
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ListTile(
-                    minTileHeight: 58,
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    minVerticalPadding: 0,
-                    visualDensity: VisualDensity.compact,
-
-                    tileColor: Theme.of(context).colorScheme.surfaceContainer,
-                    title: Row(
-                      spacing: 10,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [icons[index], Text(names[index])],
-                    ),
-
-                    onTap: () {
-                      showCurrentValues
-                          //show transactions in this category
-                          ? showModalBottomSheet(
-                              isScrollControlled: true,
-                              context: context,
-                              builder: (context) {
-                                return MyTransactionList(
-                                  categoryName: names[index],
-
-                                  oneCategory: true,
-                                );
-                              },
-                            )
-                          //show edit screen
-                          : showModalBottomSheet(
-                              isScrollControlled: true,
-                              context: context,
-                              builder: (context) {
-                                return MyBottomSheetBuilder(
-                                  title: 'Edit Category',
-                                  edit: true,
-                                  catIndex: index,
-                                  catType: isInc,
-                                );
-                              },
-                            );
-                    },
-                  ),
-                  Stack(
-                    alignment: Alignment.center,
+    return ListView.builder(
+      scrollDirection: Axis.vertical,
+      
+      
+      itemCount: values.length,
+      padding: EdgeInsets.zero,
+      itemBuilder: (BuildContext context, int index) {
+        return Padding(
+          padding: const EdgeInsets.all(1.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Material(
+                color: isInc
+                    ? const Color.fromARGB(19, 139, 175, 76)
+                    : const Color.fromARGB(19, 244, 155, 54),
+              
+                child: ListTile(
+                  minTileHeight: 30,
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  minVerticalPadding: 0,
+                  visualDensity: VisualDensity.compact,
+                  
+                   
+                  title: Row(
+                    spacing: 10,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      SizedBox(
-                        height: 40,
-                        child: RotatedBox(
-                          quarterTurns: isInc ? 0 : 2,
-                          child: LinearProgressIndicator(
-                            value: showCurrentValues
-                                ? curValues[index] / values[index]
-                                : values[index] / valueSum,
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.surface,
-
-                            color: catColor,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        showCurrentValues
-                            ? '\$${curValues[index].toStringAsFixed(0)} / \$${values[index].toStringAsFixed(0)}'
-                            : '\$${values[index].toStringAsFixed(0)} (%${(values[index] / valueSum * 100).toStringAsFixed(0)})',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                      icons[index],
+                      AutoSizeText(
+                        maxLines: 1,
+                        softWrap: true,
+                        minFontSize: 1,
+                        maxFontSize: 12,
+                        names[index],
                       ),
                     ],
                   ),
+                
+                  onTap: () {
+                    showCurrentValues
+                        //show transactions in this category
+                        ? showModalBottomSheet(
+                            isScrollControlled: true,
+                            context: context,
+                            builder: (context) {
+                              return SizedBox(
+                                height:
+                                    MediaQuery.of(context).size.height * 0.8,
+                                child: MyTransactionList(
+                                  categoryName: names[index],
+                
+                                  oneCategory: true,
+                                ),
+                              );
+                            },
+                          )
+                        //show edit screen
+                        : showModalBottomSheet(
+                            isScrollControlled: true,
+                            context: context,
+                            builder: (context) {
+                              return MyBottomSheetBuilder(
+                                title: 'Edit Category',
+                                edit: true,
+                                catIndex: index,
+                                catType: isInc,
+                              );
+                            },
+                          );
+                  },
+                ),
+              ),
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    height: 30,
+                    child: RotatedBox(
+                      quarterTurns: isInc ? 2 : 0,
+                      child: LinearProgressIndicator(
+                        value: showCurrentValues
+                            ? curValues[index] / values[index]
+                            : values[index] / valueSum,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.surface,
+              
+                        color: catColor,
+                      ),
+                    ),
+                  ),
+                  
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: Align(//credits
+                      alignment: Alignment.centerRight,
+                      
+                      child: Text(
+                        showCurrentValues
+                            ? !isInc ?  '\$${(values[index] - curValues[index]).toStringAsFixed(0)}' : '\$${curValues[index].toStringAsFixed(0)}' 
+                            : isInc ? '\$${values[index].toStringAsFixed(0)} ' : '${(values[index] / valueSum * 100).toStringAsFixed(0)}%',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: Align(//debits
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        showCurrentValues 
+                            ? !isInc ? '\$${curValues[index].toStringAsFixed(0)}' : '\$${(values[index] - curValues[index]).toStringAsFixed(0)}' 
+                            : isInc? '${(values[index] / valueSum * 100).toStringAsFixed(0)}%' : '\$${values[index].toStringAsFixed(0)} ',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
                 ],
               ),
-            ),
-          );
-        },
-      ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -705,6 +739,7 @@ class MyPieChart extends StatefulWidget {
     required this.outerIconData,
 
     required this.radius,
+    required this.isBudgetPage,
   });
 
   final double radius;
@@ -722,6 +757,8 @@ class MyPieChart extends StatefulWidget {
 
   final String outerName;
   final String innerName;
+
+  final bool isBudgetPage;
 
   @override
   State<MyPieChart> createState() => _MyPieChartState();
@@ -762,6 +799,8 @@ class _MyPieChartState extends State<MyPieChart> {
   int innerLength = -1;
   int outerLength = -1; //lengths set before adding filler
 
+  bool isBudgetPage = false; //whether or not the chart is on the budget page
+
   //prebuild sections for dynamic editing
   List<PieChartSectionData> innerSections = [];
   List<PieChartSectionData> outerSections = [];
@@ -783,6 +822,8 @@ class _MyPieChartState extends State<MyPieChart> {
 
     outerName = widget.outerName;
     innerName = widget.innerName;
+
+    isBudgetPage = widget.isBudgetPage;
 
     dec = widget.dec;
     for (int i = innerData.length - 1; i >= 0; i--) {
@@ -827,6 +868,7 @@ class _MyPieChartState extends State<MyPieChart> {
     outerName = widget.outerName;
     innerName = widget.innerName;
 
+    isBudgetPage = widget.isBudgetPage;
     dec = widget.dec;
     //cut zeros//messes up indexing for some reason
 
@@ -935,6 +977,7 @@ class _MyPieChartState extends State<MyPieChart> {
         final dy = touchPosition.dy - center.dy;
         final distanceFromCenter = sqrt((dx * dx) + (dy * dy));
 
+       
         inRadius = distanceFromCenter < 9.9 * radius;
         outRadius = distanceFromCenter > 15 * radius;
 
@@ -983,7 +1026,10 @@ class _MyPieChartState extends State<MyPieChart> {
     if (diff != -1 && innerSum < outerSum) {
       _addFillerSection(true, diff);
     }
-
+    if (innerSections.isEmpty) {
+      //check for empty sections,  to avoid errors
+      return SizedBox(width: 30 * radius, height: 30 * radius);
+    }
     return IgnorePointer(
       ignoring: !inRadius,
       child: PieChart(
@@ -1032,7 +1078,10 @@ class _MyPieChartState extends State<MyPieChart> {
     if (diff != -1 && innerSum > outerSum) {
       _addFillerSection(false, diff);
     }
-
+    if (outerSections.isEmpty) {
+      //check for empty sections,  to avoid errors
+      return SizedBox(width: 30 * radius, height: 30 * radius);
+    }
     return PieChart(
       swapAnimationDuration: const Duration(milliseconds: 300),
       swapAnimationCurve: Curves.easeInOut,
@@ -1052,19 +1101,51 @@ class _MyPieChartState extends State<MyPieChart> {
   }
 
   Widget _centerText() {
+    if (outerSections.isEmpty || innerSections.isEmpty) {
+      //check for empty sections,  to avoid errors
+      return SizedBox(
+        height: 15 * radius,
+        width: 15 * radius,
+        child: Center(
+          child: AutoSizeText(
+            maxLines: 3,
+            maxFontSize: 2 * radius,
+            minFontSize: radius,
+            isBudgetPage
+                ? 'Add a category'
+                : 'Record a transaction in the transactions page', //guide user to update the chart
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.secondaryFixedDim,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      );
+    }
     final String chartName = inRadius ? innerName : outerName;
 
     final String summary = (innerSum == outerSum)
-        ? 'On Budget'
+        ? isBudgetPage
+              ? 'Balanced Budget'
+              : 'Perfectly Balanced'
         : (innerSum > outerSum)
-        ? 'Under Budget'
-        : 'Over Budget';
+        ? isBudgetPage
+              ? 'Under Budget'
+              : 'Still got'
+        : isBudgetPage
+        ? 'Over Budget'
+        : 'Over Spent';
 
-    String centerTitle = outRadius ? summary : chartName;
+    String centerTitle = outRadius
+        ? summary
+        : chartName;
 
     String net = (innerSum - outerSum).abs().toStringAsFixed(dec);
-    String centerSubtitle = (innerSum == outerSum && outRadius)
-        ? ''
+    String centerSubtitle = (innerSum == outerSum && outRadius )
+        ? isBudgetPage
+              ? 'down to the penny'
+              : 'as all things should be'
         : outRadius
         ? '\$$net'
         : (inRadius)
@@ -1113,8 +1194,8 @@ class _MyPieChartState extends State<MyPieChart> {
             centerTitle,
             textAlign: TextAlign.center,
             maxLines: 2,
-            maxFontSize: 3 * radius,
-            minFontSize: radius,
+            maxFontSize: 3*radius,
+            minFontSize: 5,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurface,
               fontSize: 2 * radius,
@@ -1126,8 +1207,8 @@ class _MyPieChartState extends State<MyPieChart> {
             centerSubtitle,
             textAlign: TextAlign.center,
             maxLines: 1,
-            maxFontSize: 3 * radius,
-            minFontSize: radius,
+            maxFontSize: radius,
+            minFontSize: 1,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurface,
               fontSize: 1.5 * radius,
@@ -1240,34 +1321,39 @@ class _MyTransactionListState extends State<MyTransactionList> {
 
   @override
   Widget build(BuildContext context) {
-    //isn't needed anymore since transactions are already filtered in the provider
-
-    // if (oneCategory){
-    //   for(int i = 0; i < categories.length; i++){
-    //     if (categories[i]!= categoryName){
-    //       names.removeAt(i);
-    //       values.removeAt(i);
-    //       categories.removeAt(i);
-    //     }
-    //   }
-    // }
+    if (transactions.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 20.0),
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: Text(
+            'none',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.secondaryFixedDim,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      );
+    }
     return GestureDetector(
       onTap: () {
-              Navigator.pop(context);
-            },
+        if (oneCategory) {
+          //close the modal if not in one category mode
+          Navigator.pop(context);
+        }
+      },
       child: Padding(
         //TODO add more category specific info here if wanted (ie totals, percenatges, sumaries etc)
         padding: EdgeInsets.only(top: oneCategory ? 30.0 : 10.0),
         child: ListView.builder(
           scrollDirection: Axis.vertical,
           itemCount: values.length,
-          
+
           itemBuilder: (BuildContext context, int index) {
-            
             return Padding(
               padding: const EdgeInsets.all(1),
               child: Container(
-                
                 decoration: BoxDecoration(
                   border: Border(
                     left: BorderSide(
@@ -1276,86 +1362,96 @@ class _MyTransactionListState extends State<MyTransactionList> {
                     ),
                   ),
                 ),
-                child: ListTile(
-                  tileColor: Theme.of(context).colorScheme.surfaceContainer,
-                  onTap: () {
-                    oneCategory
-                        ? null//TODO add edit transaction functionality here if wanted
-                        //catgorize transaction
-                        : showModalBottomSheet(
-                            isScrollControlled: true,
-                            context: context,
-                            builder: (context) {
-                              return Container(
-                                alignment: Alignment.center,
-                                padding: EdgeInsets.only(
-                                  bottom: MediaQuery.of(context).viewInsets.bottom,
-                                  top: 20,
-                                  left: 20,
-                                  right: 20,
-                                ),
-                                child: Column(
-                                  children: [
-                                    Text('Categorize Transaction'),
-                                    DropdownButtonFormField(
-                                      items: [
-                                        for (String name
-                                            in (widget.transactions[index].value >
-                                                    0)
-                                                ? context
+                child: Material(color: (values[index] > 0) 
+                    ? const Color.fromARGB(19, 139, 175, 76)
+                    : const Color.fromARGB(19, 244, 155, 54),
+                  child: ListTile(
+                    
+                    onTap: () {
+                      oneCategory
+                          ? null //TODO add edit/ delete transaction functionality here
+                          //catgorize transaction
+                          : showModalBottomSheet(
+                              isScrollControlled: true,
+                              context: context,
+                              builder: (context) {
+                                return Padding(
+                                  padding: EdgeInsets.only(
+                                    bottom:
+                                        MediaQuery.of(context).viewInsets.bottom +
+                                        40,
+                                    top: 20,
+                                    left: 20,
+                                    right: 20,
+                                  ),
+                                  child: SingleChildScrollView(
+                                    child: Column(
+                                      children: [
+                                        Text('Categorize Transaction'),
+                                        DropdownButtonFormField(
+                                          items: [
+                                            for (String name
+                                                in (widget
+                                                            .transactions[index]
+                                                            .value >
+                                                        0)
+                                                    ? context
+                                                          .read<UserProvider>()
+                                                          .curBudget
+                                                          .inc
+                                                          .names
+                                                    : context
+                                                          .read<UserProvider>()
+                                                          .curBudget
+                                                          .exp
+                                                          .names)
+                                              DropdownMenuItem(
+                                                value: name,
+                                                child: Text(name),
+                                              ),
+                                          ],
+                  
+                                          onChanged: (value) {
+                                            setState(() {
+                                              selectedCategory = value;
+                                            });
+                                          },
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                            if (selectedCategory == null) {
+                                              return;
+                                            }
+                  
+                                            context
+                                                .read<UserProvider>()
+                                                .categorizeTransaction(
+                                                  transaction:
+                                                      widget.transactions[index],
+                                                  budget: context
                                                       .read<UserProvider>()
                                                       .curBudget
-                                                      .inc
-                                                      .names
-                                                : context
-                                                      .read<UserProvider>()
-                                                      .curBudget
-                                                      .exp
-                                                      .names)
-                                          DropdownMenuItem(
-                                            value: name,
-                                            child: Text(name),
-                                          ),
+                                                      .budgetDate,
+                                                  category:
+                                                      selectedCategory ?? '',
+                                                );
+                                          },
+                                          child: Text('Save'),
+                                        ),
                                       ],
-              
-                                      onChanged: (value) {
-                                        setState(() {
-                                          selectedCategory = value;
-                                        });
-                                      },
                                     ),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                        if (selectedCategory == null) {
-                                          return;
-                                        }
-              
-                                        context
-                                            .read<UserProvider>()
-                                            .categorizeTransaction(
-                                              transaction:
-                                                  widget.transactions[index],
-                                              budget: context
-                                                  .read<UserProvider>()
-                                                  .curBudget
-                                                  .budgetDate,
-                                              category: selectedCategory ?? '',
-                                            );
-                                      },
-                                      child: Text('Save'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          );
-                    //categorize
-                  },
-                  title: AutoSizeText(names[index], maxLines: 1),
-                  subtitle: AutoSizeText(
-                    "${(values[index] > 0) ? '+' : '-'}\$${(values[index].abs()).toStringAsFixed(2)}",
-                    maxLines: 1,
+                                  ),
+                                );
+                              },
+                            );
+                      //categorize
+                    },
+                    title: AutoSizeText(names[index], maxLines: 1),
+                    subtitle: AutoSizeText(
+                      "${(values[index] > 0) ? '+' : '-'}\$${(values[index].abs()).toStringAsFixed(2)}",
+                      maxLines: 1,
+                    ),
                   ),
                 ),
               ),

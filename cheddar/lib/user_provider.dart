@@ -13,6 +13,7 @@ class UserProvider extends ChangeNotifier {
 
   List<Transaction> curTransactions = [];
   String curTransactionsCategory = '#inbox';
+  List<Transaction> savedTransactions = [];
 
   List<String> budgetNames = [];
   int budgetIndex = -1;
@@ -404,7 +405,28 @@ class UserProvider extends ChangeNotifier {
     setBudgetData(date: budgetNames[budgetIndex]);
   }
 
+
   //transactions
+  Future<void> getSavedTransactions() async {
+    List<Transaction> t = [];
+    final ref = FirebaseFirestore.instance
+        .collection('users')
+        .doc(email)
+        .collection('Transactions')
+        .doc('#saved');
+
+    final snap = await ref.get();
+    if (snap.exists) {
+      Map<String, dynamic> transactionData =
+          snap.data() as Map<String, dynamic>;
+      List categoryData = transactionData['transactions'] ?? [];
+      for (int i = 0; i < categoryData.length; i++) {
+        t.add(Transaction(data: categoryData[i]));
+      }
+    }
+    savedTransactions = t;
+    return;
+  }
   Future<void> loadTransactions({
     required String budget,
     required String cat,

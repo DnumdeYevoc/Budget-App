@@ -16,6 +16,7 @@ class _TransactionPageState extends State<TransactionPage> {
   String? selectedCategory;
 
   List<Transaction> transactions = [];
+  List<Transaction> savedTransactions = [];
   Widget addTransactionPopup() {
     return StatefulBuilder(
       builder: (context, setModalState) {
@@ -47,9 +48,7 @@ class _TransactionPageState extends State<TransactionPage> {
                   spacing: 22,
                   children: [
                     Text('Name'),
-                    SizedBox(
-                      width: 100,
-                      height: 40,
+                    Expanded(
                       child: TextField(
                         //Category Name
                         style: TextStyle(fontSize: 12),
@@ -69,22 +68,18 @@ class _TransactionPageState extends State<TransactionPage> {
                   spacing: 10,
                   children: [
                     Text('Amount'),
-                    SizedBox(
-                      width: 100,
-                      height: 40,
+                    Expanded(
                       child: TextField(
-                        onChanged: (value) => selectedCategory = null  ,
+                        onChanged: (value) => selectedCategory = null,
                         //Category amount
                         keyboardType: const TextInputType.numberWithOptions(
-                            signed: true,
-                            decimal: true,
-                          ),
+                          signed: true,
+                          decimal: true,
+                        ),
                         controller: amountController,
                         style: TextStyle(fontSize: 12),
                         decoration: const InputDecoration(
                           border: OutlineInputBorder(),
-                        
-                        
                         ),
                       ),
                     ),
@@ -98,38 +93,32 @@ class _TransactionPageState extends State<TransactionPage> {
                   spacing: 10,
                   children: [
                     Text('Category'),
-                    DropdownButton<String>(
-                      value: selectedCategory,
-                      items: ((double.tryParse(amountController.text)?? 0)> 0)
-                      ?context
-                          .read<UserProvider>()
-                          .curBudget
-                          .inc
-                          .names
-                          .map(
-                            (name) => DropdownMenuItem<String>(
-                              value: name,
-                              child: Text(name),
-                            ),
-                          )
-                          .toList()
-                      :context
-                          .read<UserProvider>()
-                          .curBudget
-                          .exp
-                          .names
-                          .map(
-                            (name) => DropdownMenuItem<String>(
-                              value: name,
-                              child: Text(name),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        setModalState(() { 
-                          selectedCategory = value;
-                        });
-                      },
+                    SizedBox(
+                      width: 200,//make this dynamic
+                      
+                      child: DropdownButtonFormField(
+                        
+                        items: [
+                          for (String name
+                              in ((double.tryParse(amountController.text) ?? 0) > 0)
+                                  ? context
+                                        .read<UserProvider>()
+                                        .curBudget
+                                        .inc
+                                        .names
+                                  : context
+                                        .read<UserProvider>()
+                                        .curBudget
+                                        .exp
+                                        .names)
+                            DropdownMenuItem(value: name, child: Text(name)),
+                        ],
+                        onChanged: (value) {
+                          setModalState(() {
+                            selectedCategory = value;
+                          });
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -139,7 +128,7 @@ class _TransactionPageState extends State<TransactionPage> {
                     context.read<UserProvider>().addTransaction(
                       name: nameController.text,
                       value: double.tryParse(amountController.text) ?? -1,
-                      category: selectedCategory?? '',
+                      category: selectedCategory ?? '',
                     );
                     Navigator.pop(context);
                   },
@@ -158,16 +147,20 @@ class _TransactionPageState extends State<TransactionPage> {
   @override
   void initState() {
     super.initState();
-    context.read<UserProvider>().loadTransactions(
-      budget: '',
-      cat:'',
-    );
+    context.read<UserProvider>().loadTransactions(budget: '', cat: '');
+    context.read<UserProvider>().getSavedTransactions();
   }
   @override
-  Widget build(BuildContext context) {
-    
-    transactions = context.watch<UserProvider>().curTransactions;
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    context.read<UserProvider>().loadTransactions(budget: '', cat: '');
+    context.read<UserProvider>().getSavedTransactions();
+    }
 
+  @override
+  Widget build(BuildContext context) {
+    transactions = context.watch<UserProvider>().curTransactions;
+    savedTransactions = context.watch<UserProvider>().savedTransactions;
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color.fromARGB(255, 196, 176, 0),
@@ -181,10 +174,39 @@ class _TransactionPageState extends State<TransactionPage> {
           );
         },
       ),
-      body: MyTransactionList(
-        oneCategory: false,        
-        transactions: transactions,
-
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 8.0, top: 25),
+            child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'New Transactions',
+              style: TextStyle(
+                
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
+            ),
+                    ),
+          ),
+          Expanded( flex: 3, child: MyTransactionList(oneCategory: false, transactions: transactions)),
+          Padding(
+            padding: const EdgeInsets.only(left: 8.0),
+            child: Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Previous Transactions',
+              style: TextStyle(
+                
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+              ),
+            ),
+                    ),
+          ),
+          Expanded( flex: 1, child: MyTransactionList(oneCategory: false, transactions: savedTransactions)),
+        ],
       ),
     );
   }

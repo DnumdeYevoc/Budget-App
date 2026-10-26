@@ -20,7 +20,7 @@ class _BudgetPageState extends State<BudgetPage> {
       floatingActionButton: Align(
         alignment: AlignmentGeometry.centerRight,
         child: Padding(
-          padding: EdgeInsetsGeometry.only(top: 170),
+          padding: EdgeInsetsGeometry.only(top: 100),
           child: FloatingActionButton(
             onPressed: () {
               showModalBottomSheet(
@@ -185,23 +185,39 @@ class _BudgetPageState extends State<BudgetPage> {
                 outerName: 'Expenses',
                 outerNameData: budget.exp.names,
                 outerIconData: budget.exp.icons,
-                radius: 12,
+                radius: 10,//prev 12
+                isBudgetPage: true,
               ),
             ),
-            MyCategoryList(
-              names: budget.inc.names,
-              icons: budget.inc.icons,
-              values: budget.inc.values,
-              showCurrentValues: false,
-              isInc: true,
-            ),
-            MyCategoryList(
-              names: budget.exp.names,
-              icons: budget.exp.icons,
-              values: budget.exp.values,
-              showCurrentValues: false,
-              isInc: false,
-            ),
+            SizedBox(
+              height: 20,
+            )
+            ,
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [Expanded(
+                  child: MyCategoryList(
+                  names: budget.inc.names,
+                  icons: budget.inc.icons,
+                  values: budget.inc.values,
+                  showCurrentValues: false,
+                  isInc: true,
+                              ),
+                ),
+              Expanded(
+                child: MyCategoryList(
+                  names: budget.exp.names,
+                  icons: budget.exp.icons,
+                  values: budget.exp.values,
+                  showCurrentValues: false,
+                  isInc: false,
+                ),
+              ),]
+              
+              ),
+            )
+            
           ],
         ),
       ),
