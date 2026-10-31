@@ -16,7 +16,7 @@ class _HomePageState extends State<HomePage> {
     final Budget budget = context.watch<UserProvider>().curBudget;
 
     return Scaffold(
-      appBar: AppBar(title: MyHeaderTitle()),
+      appBar: AppBar(title: MyHeaderTitle(), toolbarHeight: 70,),
       body: SafeArea(
         child: Column(
           children: [

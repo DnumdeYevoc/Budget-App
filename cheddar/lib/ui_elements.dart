@@ -10,33 +10,127 @@ import 'package:flutter_iconpicker/flutter_iconpicker.dart';
 import 'package:flutter_iconpicker/Models/configuration.dart';
 
 //stateless
-class MyHeaderTitle extends StatelessWidget {
-  const MyHeaderTitle({super.key});
+class MyHeaderTitle extends StatefulWidget {
+  
+  const MyHeaderTitle({super.key,
+  this.showBudgetName = true
+  });
+  final bool showBudgetName;
+  @override
+  State<MyHeaderTitle> createState() => _MyHeaderTitleState();
+}
 
+class _MyHeaderTitleState extends State<MyHeaderTitle> {
+  final createNewBalanceController = TextEditingController();
+  
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SizedBox(height: 30),
-        Center(
-          child: SizedBox(
-            width: 200,
-            height: 70,
-            child: AutoSizeText(
-              context.select((UserProvider p) => p.curBudget.budgetDate),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              maxFontSize: 40,
-              minFontSize: 10,
-              style: TextStyle(
-                fontSize: 50,
-                color: Theme.of(context).colorScheme.onSurface,
-                fontWeight: FontWeight.bold,
+    return Center(
+      child: Column(
+        children: [
+          widget.showBudgetName
+              ? SizedBox(
+                  width: 250,
+                  height: 40,
+                  child: AutoSizeText(
+                    context.select((UserProvider p) => p.curBudget.budgetDate),
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    maxFontSize: 40,
+                    minFontSize: 10,
+                    style: TextStyle(
+                      fontSize: 50,
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                )
+              : SizedBox(height: 0),
+          SizedBox(
+            width: 250,
+            height: 50,
+            child: TextButton(
+              onPressed: () {
+                //set balance
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: Text(
+                        "Set Balance",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      content: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('New Balance: '),
+                          SizedBox(
+                            width: 100,
+                            child: Transform.scale(
+                              scale: 0.8,
+                              child: TextField(
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      signed: true,
+                                      decimal: true,
+                                    ),
+                                controller: createNewBalanceController,
+                                decoration: const InputDecoration(
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      actions: [
+                        Center(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              double balance =
+                                  double.tryParse(
+                                    createNewBalanceController.text,
+                                  ) ??
+                                  -1;
+                              if (balance != 1) {
+                                context.read<UserProvider>().setCurBalance(
+                                  val: balance,
+                                );
+                              }
+
+                              Navigator.pop(context);
+                            },
+                            child: Text('Save'),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+
+              child: AutoSizeText(
+                context.select(
+                  (UserProvider p) =>
+                      "Balance: \$${(p.curBalance).toStringAsFixed(2)}",
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                maxFontSize: 20,
+                minFontSize: 10,
+                style: TextStyle(
+                  fontSize: 50,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -596,8 +690,7 @@ class _MyCategoryListState extends State<MyCategoryList> {
 
     return ListView.builder(
       scrollDirection: Axis.vertical,
-      
-      
+
       itemCount: values.length,
       padding: EdgeInsets.zero,
       itemBuilder: (BuildContext context, int index) {
@@ -610,15 +703,14 @@ class _MyCategoryListState extends State<MyCategoryList> {
                 color: isInc
                     ? const Color.fromARGB(19, 139, 175, 76)
                     : const Color.fromARGB(19, 244, 155, 54),
-              
+
                 child: ListTile(
                   minTileHeight: 30,
                   dense: true,
                   contentPadding: EdgeInsets.zero,
                   minVerticalPadding: 0,
                   visualDensity: VisualDensity.compact,
-                  
-                   
+
                   title: Row(
                     spacing: 10,
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -634,7 +726,7 @@ class _MyCategoryListState extends State<MyCategoryList> {
                       ),
                     ],
                   ),
-                
+
                   onTap: () {
                     showCurrentValues
                         //show transactions in this category
@@ -647,7 +739,7 @@ class _MyCategoryListState extends State<MyCategoryList> {
                                     MediaQuery.of(context).size.height * 0.8,
                                 child: MyTransactionList(
                                   categoryName: names[index],
-                
+
                                   oneCategory: true,
                                 ),
                               );
@@ -680,36 +772,44 @@ class _MyCategoryListState extends State<MyCategoryList> {
                         value: showCurrentValues
                             ? curValues[index] / values[index]
                             : values[index] / valueSum,
-                        backgroundColor: Theme.of(
-                          context,
-                        ).colorScheme.surface,
-              
+                        backgroundColor: Theme.of(context).colorScheme.surface,
+
                         color: catColor,
                       ),
                     ),
                   ),
-                  
+
                   Padding(
                     padding: const EdgeInsets.only(right: 8.0),
-                    child: Align(//credits
+                    child: Align(
+                      //credits
                       alignment: Alignment.centerRight,
-                      
+
                       child: Text(
                         showCurrentValues
-                            ? !isInc ?  '\$${(values[index] - curValues[index]).toStringAsFixed(0)}' : '\$${curValues[index].toStringAsFixed(0)}' 
-                            : isInc ? '\$${values[index].toStringAsFixed(0)} ' : '${(values[index] / valueSum * 100).toStringAsFixed(0)}%',
+                            ? !isInc
+                                  ? '\$${(values[index] - curValues[index]).toStringAsFixed(0)}'
+                                  : '\$${curValues[index].toStringAsFixed(0)}'
+                            : isInc
+                            ? '\$${values[index].toStringAsFixed(0)} '
+                            : '${(values[index] / valueSum * 100).toStringAsFixed(0)}%',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.only(left: 8.0),
-                    child: Align(//debits
+                    child: Align(
+                      //debits
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        showCurrentValues 
-                            ? !isInc ? '\$${curValues[index].toStringAsFixed(0)}' : '\$${(values[index] - curValues[index]).toStringAsFixed(0)}' 
-                            : isInc? '${(values[index] / valueSum * 100).toStringAsFixed(0)}%' : '\$${values[index].toStringAsFixed(0)} ',
+                        showCurrentValues
+                            ? !isInc
+                                  ? '\$${curValues[index].toStringAsFixed(0)}'
+                                  : '\$${(values[index] - curValues[index]).toStringAsFixed(0)}'
+                            : isInc
+                            ? '${(values[index] / valueSum * 100).toStringAsFixed(0)}%'
+                            : '\$${values[index].toStringAsFixed(0)} ',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -977,7 +1077,6 @@ class _MyPieChartState extends State<MyPieChart> {
         final dy = touchPosition.dy - center.dy;
         final distanceFromCenter = sqrt((dx * dx) + (dy * dy));
 
-       
         inRadius = distanceFromCenter < 9.9 * radius;
         outRadius = distanceFromCenter > 15 * radius;
 
@@ -1137,12 +1236,10 @@ class _MyPieChartState extends State<MyPieChart> {
         ? 'Over Budget'
         : 'Over Spent';
 
-    String centerTitle = outRadius
-        ? summary
-        : chartName;
+    String centerTitle = outRadius ? summary : chartName;
 
     String net = (innerSum - outerSum).abs().toStringAsFixed(dec);
-    String centerSubtitle = (innerSum == outerSum && outRadius )
+    String centerSubtitle = (innerSum == outerSum && outRadius)
         ? isBudgetPage
               ? 'down to the penny'
               : 'as all things should be'
@@ -1194,7 +1291,7 @@ class _MyPieChartState extends State<MyPieChart> {
             centerTitle,
             textAlign: TextAlign.center,
             maxLines: 2,
-            maxFontSize: 3*radius,
+            maxFontSize: 3 * radius,
             minFontSize: 5,
             style: TextStyle(
               color: Theme.of(context).colorScheme.onSurface,
@@ -1248,12 +1345,13 @@ class MyTransactionList extends StatefulWidget {
     required this.oneCategory,
     this.categoryName = '',
     this.transactions = const [],
+    this.noTap = false
   });
   final List<Transaction> transactions;
 
   final bool oneCategory;
   final String categoryName;
-
+  final bool noTap;
   @override
   State<MyTransactionList> createState() => _MyTransactionListState();
 }
@@ -1362,23 +1460,24 @@ class _MyTransactionListState extends State<MyTransactionList> {
                     ),
                   ),
                 ),
-                child: Material(color: (values[index] > 0) 
-                    ? const Color.fromARGB(19, 139, 175, 76)
-                    : const Color.fromARGB(19, 244, 155, 54),
+                child: Material(
+                  color: (values[index] > 0)
+                      ? const Color.fromARGB(19, 139, 175, 76)
+                      : const Color.fromARGB(19, 244, 155, 54),
                   child: ListTile(
-                    
                     onTap: () {
-                      oneCategory
-                          ? null //TODO add edit/ delete transaction functionality here
+                        if (!widget.noTap){
                           //catgorize transaction
-                          : showModalBottomSheet(
+                        showModalBottomSheet(
                               isScrollControlled: true,
                               context: context,
                               builder: (context) {
                                 return Padding(
                                   padding: EdgeInsets.only(
                                     bottom:
-                                        MediaQuery.of(context).viewInsets.bottom +
+                                        MediaQuery.of(
+                                          context,
+                                        ).viewInsets.bottom +
                                         40,
                                     top: 20,
                                     left: 20,
@@ -1386,65 +1485,82 @@ class _MyTransactionListState extends State<MyTransactionList> {
                                   ),
                                   child: SingleChildScrollView(
                                     child: Column(
-                                      children: [
-                                        Text('Categorize Transaction'),
-                                        DropdownButtonFormField(
-                                          items: [
-                                            for (String name
-                                                in (widget
-                                                            .transactions[index]
-                                                            .value >
-                                                        0)
-                                                    ? context
-                                                          .read<UserProvider>()
-                                                          .curBudget
-                                                          .inc
-                                                          .names
-                                                    : context
-                                                          .read<UserProvider>()
-                                                          .curBudget
-                                                          .exp
-                                                          .names)
-                                              DropdownMenuItem(
-                                                value: name,
-                                                child: Text(name),
+                                      children: !oneCategory
+                                          ? [
+                                              const Text('Categorize Transaction'),
+                                              DropdownButtonFormField<String>(
+                                                initialValue: null,
+                                                items: [
+                                                  for (String name
+                                                      in (widget
+                                                                  .transactions[index]
+                                                                  .value >
+                                                              0)
+                                                          ? context
+                                                              .read<UserProvider>()
+                                                              .curBudget
+                                                              .inc
+                                                              .names
+                                                          : context
+                                                              .read<UserProvider>()
+                                                              .curBudget
+                                                              .exp
+                                                              .names)
+                                                    DropdownMenuItem<String>(
+                                                      value: name,
+                                                      child: Text(name),
+                                                    ),
+                                                ],
+                                                onChanged: (value) {
+                                                  setState(() {
+                                                    selectedCategory = value;
+                                                  });
+                                                },
                                               ),
-                                          ],
-                  
-                                          onChanged: (value) {
-                                            setState(() {
-                                              selectedCategory = value;
-                                            });
-                                          },
-                                        ),
-                                        ElevatedButton(
-                                          onPressed: () {
-                                            Navigator.pop(context);
-                                            if (selectedCategory == null) {
-                                              return;
-                                            }
-                  
-                                            context
-                                                .read<UserProvider>()
-                                                .categorizeTransaction(
-                                                  transaction:
-                                                      widget.transactions[index],
-                                                  budget: context
+                                              ElevatedButton(
+
+                                                onPressed: () {
+
+                                                  if (selectedCategory == null) {
+                                                    Navigator.pop(context);
+                                                    return;
+                                                  }
+
+                                                  Navigator.pop(context);
+                                                  context
                                                       .read<UserProvider>()
-                                                      .curBudget
-                                                      .budgetDate,
-                                                  category:
-                                                      selectedCategory ?? '',
-                                                );
-                                          },
-                                          child: Text('Save'),
-                                        ),
-                                      ],
+                                                      .categorizeTransaction(
+                                                        transaction: widget
+                                                            .transactions[index],
+                                                        budget: context
+                                                            .read<UserProvider>()
+                                                            .curBudget
+                                                            .budgetDate,
+                                                        category:
+                                                            selectedCategory ?? '',
+                                                      );
+                                                },
+                                                child: const Text('Save'),
+                                              ),
+                                            ]
+                                          : [
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                  context.read<UserProvider>().deleteTransaction(
+                                                      i: index,
+                                                      category:categoryName ,
+                                                  );
+                                                  Navigator.pop(context);
+                                                  Navigator.pop(context);
+                                                },
+                                                child: const Text('Delete'),
+                                              ),
+                                            ],
                                     ),
                                   ),
                                 );
                               },
-                            );
+                            );}
                       //categorize
                     },
                     title: AutoSizeText(names[index], maxLines: 1),

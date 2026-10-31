@@ -11,6 +11,8 @@ class UserProvider extends ChangeNotifier {
 
   Budget curBudget = Budget.blank();
 
+  double curBalance = 0;
+
   List<Transaction> curTransactions = [];
   String curTransactionsCategory = '#inbox';
   List<Transaction> savedTransactions = [];
@@ -207,7 +209,9 @@ class UserProvider extends ChangeNotifier {
 
     Map<String, dynamic> data = usersDocSnap.data() as Map<String, dynamic>;
     username = data['username'] as String? ?? 'Set Username';
+    //set cur Balance
 
+    curBalance = data["Current Balance"] as double? ?? -1;
     budgetsRef = usersDocRef.collection('Budgets');
     //create a new collection "budgets" under your user in the user collection, if it isn't already there
 
@@ -346,18 +350,10 @@ class UserProvider extends ChangeNotifier {
 
     //load curvalues
     for (final cat in expNames) {
-
-      setCategoryCurValue(
-        budget: date,
-        category: cat,
-      ); 
+      setCategoryCurValue(budget: date, category: cat);
     }
     for (final cat in incNames) {
-
-      setCategoryCurValue(
-        budget: date,
-        category: cat,
-      ); 
+      setCategoryCurValue(budget: date, category: cat);
     }
 
     return Budget(
@@ -405,6 +401,26 @@ class UserProvider extends ChangeNotifier {
     setBudgetData(date: budgetNames[budgetIndex]);
   }
 
+  //Cur Balance
+  Future<void> setCurBalance({required double val}) async {
+    //set user variable  Latest transaction ID
+    final userRef = FirebaseFirestore.instance.collection('users').doc(email);
+    userRef.set({"Current Balance": val}, SetOptions(merge: true));
+    curBalance = val;
+  }
+
+  Future<void> updateCurBalance(double change) async {
+    //set user variable
+    final userRef = FirebaseFirestore.instance.collection('users').doc(email);
+    final userSnap = await userRef.get();
+    //grab user variable
+    Map<String, dynamic> snapData = userSnap.data() as Map<String, dynamic>;
+    curBalance = snapData["Current Balance"] as double;
+
+    curBalance += change;
+    print(change);
+    userRef.set({"Current Balance": curBalance}, SetOptions(merge: true));
+  }
 
   //transactions
   Future<void> getSavedTransactions() async {
@@ -427,6 +443,7 @@ class UserProvider extends ChangeNotifier {
     savedTransactions = t;
     return;
   }
+
   Future<void> loadTransactions({
     required String budget,
     required String cat,
@@ -454,7 +471,54 @@ class UserProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> deleteTransaction({
+    required int i,
+    required String category,
+  }) async {
+    final budgetRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(email)
+        .collection('Transactions')
+        .doc(curBudget.budgetDate);
+
+    final budgetSnap = await budgetRef.get();
+    final tRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(email)
+        .collection('Transactions')
+        .doc("#saved");
+
+    final tSnap = await tRef.get();
+
+    if (budgetSnap.exists) {
+      Map<String, dynamic> data = budgetSnap.data() as Map<String, dynamic>;
+      List categoryData = data[category];
+      //remove from saved
+      if (tSnap.exists) {
+        Map<String, dynamic> tData = tSnap.data() as Map<String, dynamic>;
+        List tList = tData["transactions"];
+        for (int n = 0; n < tList.length; n++) {
+          if (tList[n] == categoryData[i]) {
+            print(tList[n]);
+            tList.removeAt(n);
+            
+          }
+        }
+        await tRef.set({"transactions": tList});
+      }
+      //update curBalance
+      updateCurBalance(-Transaction(data:categoryData[i]).value);
+      //remove from category
+      categoryData.removeAt(i);
+      await budgetRef.set({category: categoryData}, SetOptions(merge: true));//TODO flip previous transactions list
+    }
+    //remove from cur values
+    await setCategoryCurValue(budget: curBudget.budgetDate, category: category);
+    
+  }
+
   Future<void> addTransaction({
+    //TODO: make delete transaction function
     required String name,
     required double value,
 
@@ -479,6 +543,8 @@ class UserProvider extends ChangeNotifier {
       //set user variable  Latest transaction ID
       userRef.set({"latestTransactionID": id}, SetOptions(merge: true));
 
+      //set curbalance
+      updateCurBalance(value);
       //convert to data (__::__::___)
       String data = encodeTransaction(name: name, value: value, id: id);
 
@@ -495,19 +561,15 @@ class UserProvider extends ChangeNotifier {
         }, SetOptions(merge: true));
         //updates curvalues
         await setCategoryCurValue(budget: budgetDate, category: category);
-
       } else {
         //if there is no budget and category
         //move to inbox ( unsorted )
         await transactionRef.doc('#inbox').set({
           'transactions': FieldValue.arrayUnion([data]),
         }, SetOptions(merge: true));
-        
       }
       //loads inbox as curtransactioncateogry bc additng transactions will always be in transaction page
       await loadTransactions(budget: '', cat: '');
-      
-        
     } else {
       return;
     }
@@ -592,13 +654,13 @@ class UserProvider extends ChangeNotifier {
         index: index,
         newVar: sum.abs(),
         date: curBudget.budgetDate,
-        varName: 'expCurValues', 
+        varName: 'expCurValues',
         firebaseSave: true, //makes it save to local, and firebase
       );
     } else {
       // print("category not found");
     }
-      }
+  }
 
   //need function to categorize transactions, which calls a function that upadtes the curvalues
   Future<void> categorizeTransaction({

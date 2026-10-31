@@ -162,6 +162,7 @@ class _TransactionPageState extends State<TransactionPage> {
     transactions = context.watch<UserProvider>().curTransactions;
     savedTransactions = context.watch<UserProvider>().savedTransactions;
     return Scaffold(
+      appBar: AppBar(title: MyHeaderTitle(showBudgetName: false), toolbarHeight: 20,),
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color.fromARGB(255, 196, 176, 0),
         child: Icon(Icons.add),
@@ -190,7 +191,7 @@ class _TransactionPageState extends State<TransactionPage> {
             ),
                     ),
           ),
-          Expanded( flex: 3, child: MyTransactionList(oneCategory: false, transactions: transactions)),
+          Expanded( flex: 5, child: MyTransactionList(oneCategory: false, transactions: transactions)),
           Padding(
             padding: const EdgeInsets.only(left: 8.0),
             child: Align(
@@ -205,7 +206,7 @@ class _TransactionPageState extends State<TransactionPage> {
             ),
                     ),
           ),
-          Expanded( flex: 1, child: MyTransactionList(oneCategory: false, transactions: savedTransactions)),
+          Expanded( flex: 2, child: MyTransactionList(oneCategory: false, transactions: savedTransactions.reversed.toList(), noTap: true)),
         ],
       ),
     );
