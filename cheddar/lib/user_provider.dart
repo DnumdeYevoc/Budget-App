@@ -418,7 +418,7 @@ class UserProvider extends ChangeNotifier {
     curBalance = snapData["Current Balance"] as double;
 
     curBalance += change;
-    print(change);
+  
     userRef.set({"Current Balance": curBalance}, SetOptions(merge: true));
   }
 
@@ -499,7 +499,7 @@ class UserProvider extends ChangeNotifier {
         List tList = tData["transactions"];
         for (int n = 0; n < tList.length; n++) {
           if (tList[n] == categoryData[i]) {
-            print(tList[n]);
+            
             tList.removeAt(n);
             
           }

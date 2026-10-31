@@ -11,10 +11,7 @@ import 'package:flutter_iconpicker/Models/configuration.dart';
 
 //stateless
 class MyHeaderTitle extends StatefulWidget {
-  
-  const MyHeaderTitle({super.key,
-  this.showBudgetName = true
-  });
+  const MyHeaderTitle({super.key, this.showBudgetName = true});
   final bool showBudgetName;
   @override
   State<MyHeaderTitle> createState() => _MyHeaderTitleState();
@@ -22,7 +19,7 @@ class MyHeaderTitle extends StatefulWidget {
 
 class _MyHeaderTitleState extends State<MyHeaderTitle> {
   final createNewBalanceController = TextEditingController();
-  
+
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -200,6 +197,28 @@ class _MyBottomSheetBuilderState extends State<MyBottomSheetBuilder> {
   @override
   void initState() {
     super.initState();
+   
+    catIndex = widget.catIndex;
+    catType = widget.catType;
+    final Budget budget = context
+        .read<UserProvider>()
+        .curBudget; //works bc it runs once, doesnt need to watch
+      edit = widget.edit;
+    if (edit) {
+      //
+      if (catType) {
+        if (catIndex >= budget.inc.values.length) return;
+        categoryNameController.text = budget.inc.names[catIndex];
+
+        categoryAmountController.text = "${budget.inc.values[catIndex]}";
+      } else {
+        if (catIndex >= budget.exp.values.length) return;
+        categoryNameController.text = budget.inc.names[catIndex];
+
+        categoryAmountController.text = "${budget.exp.values[catIndex]}";
+      }
+      
+    }
   }
 
   @override
@@ -223,8 +242,8 @@ class _MyBottomSheetBuilderState extends State<MyBottomSheetBuilder> {
         //set values from provider
         categoryIcon = budget.inc.icons[catIndex];
         categoryIconName = budget.inc.iconNames[catIndex];
-        categoryNameController.text = budget.inc.names[catIndex];
-        categoryAmountController.text = '${budget.inc.values[catIndex]}';
+        initialCategoryName = budget.inc.names[catIndex];
+
         initialCategoryValue = budget.inc.values[catIndex];
       } else {
         if (catIndex >= budget.exp.values.length) return;
@@ -232,14 +251,13 @@ class _MyBottomSheetBuilderState extends State<MyBottomSheetBuilder> {
         //exp
         categoryIcon = budget.exp.icons[catIndex];
         categoryIconName = budget.exp.iconNames[catIndex];
-        categoryNameController.text = budget.exp.names[catIndex];
-        categoryAmountController.text = '${budget.exp.values[catIndex]}';
+        initialCategoryName = budget.exp.names[catIndex];
+
         initialCategoryValue = budget.exp.values[catIndex];
       }
       //save initial values
       initialCategoryIcon = categoryIcon;
       initialCategoryIconName = categoryIconName;
-      initialCategoryName = categoryNameController.text;
     }
   }
 
@@ -1230,11 +1248,11 @@ class _MyPieChartState extends State<MyPieChart> {
               : 'Perfectly Balanced'
         : (innerSum > outerSum)
         ? isBudgetPage
-              ? 'Under Budget'
-              : 'Still got'
+              ? 'Under Budgeted'
+              : 'Under'
         : isBudgetPage
-        ? 'Over Budget'
-        : 'Over Spent';
+        ? 'Over Budgeted'
+        : 'Over';
 
     String centerTitle = outRadius ? summary : chartName;
 
@@ -1345,7 +1363,7 @@ class MyTransactionList extends StatefulWidget {
     required this.oneCategory,
     this.categoryName = '',
     this.transactions = const [],
-    this.noTap = false
+    this.noTap = false,
   });
   final List<Transaction> transactions;
 
@@ -1466,101 +1484,104 @@ class _MyTransactionListState extends State<MyTransactionList> {
                       : const Color.fromARGB(19, 244, 155, 54),
                   child: ListTile(
                     onTap: () {
-                        if (!widget.noTap){
-                          //catgorize transaction
+                      if (!widget.noTap) {
+                        //catgorize transaction
                         showModalBottomSheet(
-                              isScrollControlled: true,
-                              context: context,
-                              builder: (context) {
-                                return Padding(
-                                  padding: EdgeInsets.only(
-                                    bottom:
-                                        MediaQuery.of(
-                                          context,
-                                        ).viewInsets.bottom +
-                                        40,
-                                    top: 20,
-                                    left: 20,
-                                    right: 20,
-                                  ),
-                                  child: SingleChildScrollView(
-                                    child: Column(
-                                      children: !oneCategory
-                                          ? [
-                                              const Text('Categorize Transaction'),
-                                              DropdownButtonFormField<String>(
-                                                initialValue: null,
-                                                items: [
-                                                  for (String name
-                                                      in (widget
-                                                                  .transactions[index]
-                                                                  .value >
-                                                              0)
-                                                          ? context
-                                                              .read<UserProvider>()
-                                                              .curBudget
-                                                              .inc
-                                                              .names
-                                                          : context
-                                                              .read<UserProvider>()
-                                                              .curBudget
-                                                              .exp
-                                                              .names)
-                                                    DropdownMenuItem<String>(
-                                                      value: name,
-                                                      child: Text(name),
-                                                    ),
-                                                ],
-                                                onChanged: (value) {
-                                                  setState(() {
-                                                    selectedCategory = value;
-                                                  });
-                                                },
-                                              ),
-                                              ElevatedButton(
-
-                                                onPressed: () {
-
-                                                  if (selectedCategory == null) {
-                                                    Navigator.pop(context);
-                                                    return;
-                                                  }
-
-                                                  Navigator.pop(context);
-                                                  context
-                                                      .read<UserProvider>()
-                                                      .categorizeTransaction(
-                                                        transaction: widget
-                                                            .transactions[index],
-                                                        budget: context
-                                                            .read<UserProvider>()
+                          isScrollControlled: true,
+                          context: context,
+                          builder: (context) {
+                            return Padding(
+                              padding: EdgeInsets.only(
+                                bottom:
+                                    MediaQuery.of(context).viewInsets.bottom +
+                                    40,
+                                top: 20,
+                                left: 20,
+                                right: 20,
+                              ),
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  children: !oneCategory
+                                      ? [
+                                          const Text('Categorize Transaction'),
+                                          DropdownButtonFormField<String>(
+                                            initialValue: null,
+                                            items: [
+                                              for (String name
+                                                  in (widget
+                                                              .transactions[index]
+                                                              .value >
+                                                          0)
+                                                      ? context
+                                                            .read<
+                                                              UserProvider
+                                                            >()
                                                             .curBudget
-                                                            .budgetDate,
-                                                        category:
-                                                            selectedCategory ?? '',
-                                                      );
-                                                },
-                                                child: const Text('Save'),
-                                              ),
-                                            ]
-                                          : [
-                                              ElevatedButton(
-                                                onPressed: () {
-                                                  context.read<UserProvider>().deleteTransaction(
-                                                      i: index,
-                                                      category:categoryName ,
-                                                  );
-                                                  Navigator.pop(context);
-                                                  Navigator.pop(context);
-                                                },
-                                                child: const Text('Delete'),
-                                              ),
+                                                            .inc
+                                                            .names
+                                                      : context
+                                                            .read<
+                                                              UserProvider
+                                                            >()
+                                                            .curBudget
+                                                            .exp
+                                                            .names)
+                                                DropdownMenuItem<String>(
+                                                  value: name,
+                                                  child: Text(name),
+                                                ),
                                             ],
-                                    ),
-                                  ),
-                                );
-                              },
-                            );}
+                                            onChanged: (value) {
+                                              setState(() {
+                                                selectedCategory = value;
+                                              });
+                                            },
+                                          ),
+                                          ElevatedButton(
+                                            onPressed: () {
+                                              if (selectedCategory == null) {
+                                                Navigator.pop(context);
+                                                return;
+                                              }
+
+                                              Navigator.pop(context);
+                                              context
+                                                  .read<UserProvider>()
+                                                  .categorizeTransaction(
+                                                    transaction: widget
+                                                        .transactions[index],
+                                                    budget: context
+                                                        .read<UserProvider>()
+                                                        .curBudget
+                                                        .budgetDate,
+                                                    category:
+                                                        selectedCategory ?? '',
+                                                  );
+                                            },
+                                            child: const Text('Save'),
+                                          ),
+                                        ]
+                                      : [
+                                          ElevatedButton(
+                                            onPressed: () {
+                                              context
+                                                  .read<UserProvider>()
+                                                  .deleteTransaction(
+                                                    i: index,
+                                                    category: categoryName,
+                                                  );
+                                              Navigator.pop(context);
+                                              Navigator.pop(context);
+                                            },
+                                            child: const Text('Delete'),
+                                          ),
+                                        ],
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      }
                       //categorize
                     },
                     title: AutoSizeText(names[index], maxLines: 1),
