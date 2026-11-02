@@ -213,7 +213,7 @@ class _MyBottomSheetBuilderState extends State<MyBottomSheetBuilder> {
         categoryAmountController.text = "${budget.inc.values[catIndex]}";
       } else {
         if (catIndex >= budget.exp.values.length) return;
-        categoryNameController.text = budget.inc.names[catIndex];
+        categoryNameController.text = budget.exp.names[catIndex];
 
         categoryAmountController.text = "${budget.exp.values[catIndex]}";
       }
